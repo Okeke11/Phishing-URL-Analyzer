@@ -1,32 +1,37 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse # <-- ADD THIS
 from pydantic import BaseModel
 import joblib
 import pandas as pd
 from feature_extractor import extract_url_features
 
 print("Loading Machine Learning Model...")
-# Load the brain we just trained
 model = joblib.load("phishing_model_pro.pkl")
 
-# Initialize the API
-app = FastAPI(title="Phishing URL Analyzer API", description="AI-powered phishing detection.")
+app = FastAPI(title="Phishing URL Analyzer API")
 
-# Define the expected JSON format for incoming requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 class URLRequest(BaseModel):
     url: str
 
+# --- CHANGE YOUR ROOT ROUTE TO THIS ---
+@app.get("/")
+def read_root():
+    return FileResponse("index.html")
+
 @app.post("/analyze")
 def analyze_url(request: URLRequest):
-    # 1. Extract features using the exact same logic used during training
     features = extract_url_features(request.url)
-    
-    # 2. Convert to DataFrame (Scikit-Learn expects 2D data structures)
     features_df = pd.DataFrame([features])
-    
-    # 3. Ask the model to predict (0 = Safe, 1 = Phishing)
     prediction = model.predict(features_df)[0]
-    
-    # 4. Get the confidence/probability scores
     probabilities = model.predict_proba(features_df)[0]
     risk_score = round(probabilities[1] * 100, 2)
     
