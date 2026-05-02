@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing URL Analyzer</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+            --accent: #3b82f6;
+            --danger: #ef4444;
+            --safe: #10b981;
+            --warning: #f59e0b;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .dashboard {
+            background-color: var(--surface);
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 600px;
+        }
+        h1 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .search-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 2rem;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            background-color: #0f172a;
+            color: white;
+            font-size: 1rem;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            background-color: var(--accent);
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #2563eb;
+        }
+        .results-section {
+            display: none; /* Hidden until search */
+            border-top: 1px solid #334155;
+            padding-top: 2rem;
+        }
+        .risk-gauge-container {
+            width: 100%;
+            height: 20px;
+            background-color: #334155;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        .risk-gauge-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.8s ease-out, background-color 0.8s;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 5px;
+        }
+        .status-text {
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        .loader {
+            display: none;
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <h1>🛡️ Phishing Analyzer AI</h1>
+        
+        <div class="search-container">
+            <input type="text" id="urlInput" placeholder="Enter a URL to analyze (e.g., https://github.com)">
+            <button onclick="analyzeUrl()">Scan</button>
+        </div>
+
+        <div class="loader" id="loader">Scanning deep structural features...</div>
+
+        <div class="results-section" id="results">
+            <div class="status-text" id="statusText">Evaluating...</div>
+            
+            <div class="risk-gauge-container">
+                <div class="risk-gauge-fill" id="riskGauge"></div>
+            </div>
+            
+            <h3 style="margin-top: 1.5rem; font-size: 1rem; color: #cbd5e1;">Engine Telemetry</h3>
+            <div class="stats" id="featureStats">
+                <!-- Javascript will inject data here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function analyzeUrl() {
+            const urlInput = document.getElementById('urlInput').value;
+            const resultsDiv = document.getElementById('results');
+            const loader = document.getElementById('loader');
+            
+            if (!urlInput) return;
+
+            // Show loader, hide old results
+            resultsDiv.style.display = 'none';
+            loader.style.display = 'block';
+
+            try {
+                // Hit your local Python API
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ url: urlInput })
+                });
+
+                const data = await response.json();
+                
+                // Hide loader, show results
+                loader.style.display = 'none';
+                resultsDiv.style.display = 'block';
+
+                updateUI(data);
+
+            } catch (error) {
+                loader.style.display = 'none';
+                alert('Connection failed. Make sure your FastAPI server is running on port 8000!');
+                console.error(error);
+            }
+        }
+
+        function updateUI(data) {
+            const gauge = document.getElementById('riskGauge');
+            const statusText = document.getElementById('statusText');
+            const stats = document.getElementById('featureStats');
+            
+            const score = data.risk_score_percent;
+
+            // Animate Gauge and Set Colors
+            setTimeout(() => {
+                gauge.style.width = `${score}%`;
+            }, 100);
+
+            if (score < 30) {
+                gauge.style.backgroundColor = 'var(--safe)';
+                statusText.innerHTML = `<span style="color: var(--safe)">Low Risk (${score}%)</span>`;
+            } else if (score < 70) {
+                gauge.style.backgroundColor = 'var(--warning)';
+                statusText.innerHTML = `<span style="color: var(--warning)">Suspicious (${score}%)</span>`;
+            } else {
+                gauge.style.backgroundColor = 'var(--danger)';
+                statusText.innerHTML = `<span style="color: var(--danger)">Malicious Phishing Detected (${score}%)</span>`;
+            }
+
+            // Populate the extracted features grid dynamically
+            stats.innerHTML = '';
+            for (const [key, value] of Object.entries(data.features_extracted)) {
+                // Format the key to look nice (e.g., 'has_ip' -> 'Has Ip')
+                const cleanKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                
+                // Format the value (if it's a long float like entropy, round it)
+                let cleanValue = value;
+                if (typeof value === 'number' && !Number.isInteger(value)) {
+                    cleanValue = value.toFixed(2);
+                }
+
+                stats.innerHTML += `
+                    <div class="stat-item">
+                        <span style="color: #94a3b8">${cleanKey}</span>
+                        <span style="color: ${value > 0 && (key === 'has_ip' || key === 'has_suspicious_word' || key === 'is_shortened') ? 'var(--danger)' : '#f8fafc'}">${cleanValue}</span>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
