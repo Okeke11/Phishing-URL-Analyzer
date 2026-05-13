@@ -1,6 +1,6 @@
 # 🛡️ Intelligent Phishing URL Analyzer
 
-An AI-powered backend API that analyzes URLs in real-time to detect phishing attempts. Instead of relying on static blacklists, this system extracts lexical features from the URL and uses a Machine Learning model to predict malicious intent.
+An AI-powered backend API that analyzes URLs in real-time to detect phishing attempts. Instead of relying on static blacklists, this system extracts lexical features from the URL and uses a Machine Learning model to predict malicious intent. LIVE @ (https://okekes-phishing-ai.onrender.com/)
 
 ## ✨ Features
 * **Behavioral Analysis:** Extracts URL characteristics (length, raw IPs, subdomain counts, suspicious keywords) to evaluate risk.
